@@ -17,7 +17,7 @@
     "lint:fix": "npx eslint src --fix",
     "lint": "npx eslint",
     "types:check": "tsc --noEmit",
-    "start": "cd dist && node Launcher.js"
+    "start": "npm run build && node dist/Launcher.js"
   },
   "license": "GPL-3.0",
   "engines": {
