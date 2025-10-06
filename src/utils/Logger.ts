@@ -1,9 +1,19 @@
 import {
-  Logger, format, LoggerOptions, createLogger as createWinstonLogger,
+  Logger,
+  format,
+  LoggerOptions,
+  createLogger as createWinstonLogger,
 } from 'winston';
 import { Console, File } from 'winston/lib/winston/transports';
 import { inspect } from 'node:util';
 import type { Client } from '../Client';
+
+interface LogInfo {
+  timestamp?: string;
+  message: unknown;
+  tags?: string[];
+  level?: string;
+}
 
 function loadWinstonLogger(logger: Logger, shardId: string | number = 'Manager') {
   logger
@@ -13,10 +23,14 @@ function loadWinstonLogger(logger: Logger, shardId: string | number = 'Manager')
         format: format.combine(
           format.timestamp(),
           format.colorize(),
-          format.printf((info) => {
-            const tags = info.tags?.map((t: string) => `\x1B[36m${t}\x1B[39m`).join(', ') ?? '';
+          format.printf((info: LogInfo) => {
+            const tags = info.tags?.map((t) => `\x1B[36m${t}\x1B[39m`).join(', ') ?? '';
             const shardPrefix = ` --- [\x1B[36mShard ${shardId}\x1B[39m, ${tags}]:`;
-            return `${info.timestamp} ${shardPrefix} ${info.message instanceof Error ? inspect(info.message, { depth: 0 }) : info.message}`;
+            return `${info.timestamp} ${shardPrefix} ${
+              info.message instanceof Error
+                ? inspect(info.message, { depth: 0 })
+                : info.message
+            }`;
           }),
         ),
       }),
@@ -29,9 +43,13 @@ function loadWinstonLogger(logger: Logger, shardId: string | number = 'Manager')
         format: format.combine(
           format.timestamp(),
           format.uncolorize(),
-          format.printf((info) => {
-            const tags = info.tags?.map((t: string) => `\x1B[36m${t}\x1B[39m`).join(', ') ?? '';
-            return `${info.timestamp} --- [Shard ${shardId}, ${tags}]: ${info.message instanceof Error ? inspect(info.message, { depth: 0 }) : info.message}`;
+          format.printf((info: LogInfo) => {
+            const tags = info.tags?.map((t) => `\x1B[36m${t}\x1B[39m`).join(', ') ?? '';
+            return `${info.timestamp} --- [Shard ${shardId}, ${tags}]: ${
+              info.message instanceof Error
+                ? inspect(info.message, { depth: 0 })
+                : info.message
+            }`;
           }),
         ),
       }),
@@ -44,8 +62,8 @@ function createLogger(options?: LoggerOptions, client?: Client) {
     handleRejections: options?.handleRejections ?? true,
     exitOnError: false,
   });
-  loadWinstonLogger(logger, client?.shard?.ids[0] ?? 'Manager');
 
+  loadWinstonLogger(logger, client?.shard?.ids?.[0] ?? 'Manager');
   return logger;
 }
 
